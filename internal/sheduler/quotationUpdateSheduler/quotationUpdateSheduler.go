@@ -15,10 +15,13 @@ type QuotationUpdateSheduler struct {
 	scheduler gocron.Scheduler
 }
 
-func NewQuotationUpdateSheduler(qs quotationService.QuotationService, log *slog.Logger) *QuotationUpdateSheduler {
+func NewQuotationUpdateSheduler(qs quotationService.QuotationService, log *slog.Logger, duration time.Duration) *QuotationUpdateSheduler {
+	if duration < time.Second {
+		duration = time.Second
+	}
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	_, _ = scheduler.NewJob(
-		gocron.DurationJob(1*time.Minute),
+		gocron.DurationJob(duration),
 		gocron.NewTask(func() {
 			log.Info("Updating quotations")
 			err := qs.UpdateQuotations()

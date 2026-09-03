@@ -117,7 +117,10 @@ func main() {
 
 	log.Info("Server started")
 
-	quotationUpdateSheduler := quotationUpdateSheduler.NewQuotationUpdateSheduler(quotationService, log)
+	updateTime := cfg.QuotationUpdateScheduler.Duration
+
+
+	quotationUpdateSheduler := quotationUpdateSheduler.NewQuotationUpdateSheduler(quotationService, log, updateTime)
 	quotationUpdateSheduler.Start()
 	defer quotationUpdateSheduler.Stop()
 

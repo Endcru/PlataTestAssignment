@@ -8,9 +8,8 @@ import (
 	"strings"
 	"time"
 	model "github.com/Endcru/PlataTestAssignment/internal/models"
-	storage "github.com/Endcru/PlataTestAssignment/internal/storage/postgres"
-	storageBase "github.com/Endcru/PlataTestAssignment/internal/storage"
 	quotationAPIService "github.com/Endcru/PlataTestAssignment/internal/service/quotationAPI"
+	storageBase "github.com/Endcru/PlataTestAssignment/internal/storage"
 )
 
 const (
@@ -45,13 +44,13 @@ type QuotationService interface {
 }
 
 type QuotationServiceImpl struct {
-	storage *storage.Storage
-	log *slog.Logger
-	quotationNameRegex *regexp.Regexp
+	storage             storageBase.Storage
+	log                 *slog.Logger
+	quotationNameRegex  *regexp.Regexp
 	quotationAPIService quotationAPIService.QuotationAPIService
 }
 
-func NewQuotationService(storage *storage.Storage, log *slog.Logger, quotationAPIService quotationAPIService.QuotationAPIService) QuotationService {
+func NewQuotationService(storage storageBase.Storage, log *slog.Logger, quotationAPIService quotationAPIService.QuotationAPIService) QuotationService {
 	return &QuotationServiceImpl{storage: storage, log: log, quotationNameRegex: regexp.MustCompile(QuotationNameRegex), quotationAPIService: quotationAPIService}
 }
 
@@ -185,7 +184,7 @@ func (s *QuotationServiceImpl) UpdateQuotation(name string, newCurrencyRate floa
 func (s *QuotationServiceImpl) CreateQuotationRequest(name string, requestedAt time.Time) (int, error) {
 	const op = "quotationService.CreateQuotationRequest"
 	id, err := s.storage.GetQuotationRequestUncompletedByName(name)
-	if errors.Is(err, storageBase.ErrQuotationRequestAlreadyExists) {
+	if errors.Is(err, storageBase.ErrQuotationRequestUncompletedNotFound) {
 		id, err = s.storage.CreateQuotationRequest(model.QuotationRequest{Name: name, RequestedAt: requestedAt})
 		if err != nil {
 			return 0, fmt.Errorf("%s: %w", op, err)

@@ -233,7 +233,7 @@ func (s *Storage) GetQuotationRequestUncompletedByName(name string) (int, error)
 	err := row.Scan(&id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, storage.ErrQuotationRequestAlreadyExists
+			return 0, storage.ErrQuotationRequestUncompletedNotFound
 		}
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
