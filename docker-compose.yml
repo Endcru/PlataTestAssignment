@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: currency_exchange
+    volumes:
+      - db_volume:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - net-back
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d currency_exchange"]
+      interval: 2s
+      retries: 10
+      start_period: 5s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: currency-exchange-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      CONFIG_PATH: /app/config/docker.yaml
+    ports:
+      - "8090:8090"
+    networks:
+      - net-back
+
+networks:
+  net-back:
+    driver: bridge
+
+volumes:
+  db_volume:
