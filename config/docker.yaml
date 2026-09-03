@@ -1,0 +1,10 @@
+# config/docker.yaml
+
+env: "dev"
+storage_path: "postgres://postgres:postgres@db:5432/currency_exchange?sslmode=disable"
+quotation_update_scheduler:
+  duration: 20s
+http_server:
+  address: "0.0.0.0:8090"
+  timeout: 4s
+  idle_timeout: 30s

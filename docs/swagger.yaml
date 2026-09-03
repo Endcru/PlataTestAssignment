@@ -1,0 +1,244 @@
+basePath: /
+definitions:
+  github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse:
+    properties:
+      data:
+        type: object
+      error:
+        example: quotation not found
+        type: string
+      status:
+        enum:
+        - ERROR
+        example: ERROR
+        type: string
+    type: object
+  github_com_Endcru_PlataTestAssignment_internal_models.Quotation:
+    properties:
+      name:
+        type: string
+      rate:
+        type: number
+      updated_at:
+        type: string
+    type: object
+  github_com_Endcru_PlataTestAssignment_internal_models.QuotationUpdate:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      new_rate:
+        type: number
+      previous_rate:
+        type: number
+      source:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  internal_http-server_handlers_url_quotation.RequestQuotationUpdate:
+    properties:
+      quotation_name:
+        type: string
+    required:
+    - quotation_name
+    type: object
+  internal_http-server_handlers_url_quotation.ResponseQuotationFromUpdateIDSuccess:
+    properties:
+      data:
+        $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_models.Quotation'
+      error:
+        example: ""
+        type: string
+      status:
+        example: OK
+        type: string
+    type: object
+  internal_http-server_handlers_url_quotation.ResponseQuotationSuccess:
+    properties:
+      data:
+        $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_models.Quotation'
+      error:
+        example: ""
+        type: string
+      status:
+        example: OK
+        type: string
+    type: object
+  internal_http-server_handlers_url_quotation.ResponseQuotationUpdateData:
+    properties:
+      quotation_request_id:
+        example: 1
+        type: integer
+    type: object
+  internal_http-server_handlers_url_quotation.ResponseQuotationUpdateSuccess:
+    properties:
+      data:
+        $ref: '#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationUpdateData'
+      error:
+        example: ""
+        type: string
+      status:
+        example: OK
+        type: string
+    type: object
+  internal_http-server_handlers_url_quotation.ResponseQuotationUpdatesSuccess:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_models.QuotationUpdate'
+        type: array
+      error:
+        example: ""
+        type: string
+      status:
+        example: OK
+        type: string
+    type: object
+host: localhost:8090
+info:
+  contact: {}
+  description: Asynchronous currency quotation service
+  title: Currency Exchange API
+  version: "1.0"
+paths:
+  /quotation/{name}:
+    get:
+      description: Returns the current rate and update time for a currency pair (e.g.
+        EUR_MXN).
+      parameters:
+      - description: Currency pair code
+        example: EUR_MXN
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+      summary: Get latest quotation
+      tags:
+      - quotation
+  /quotation/{name}/update:
+    post:
+      consumes:
+      - application/json
+      description: Creates a background update request and returns its id. The currency
+        pair is taken from the JSON body (`quotation_name`); the `{name}` path segment
+        is not used.
+      parameters:
+      - description: Update request payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_http-server_handlers_url_quotation.RequestQuotationUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationUpdateSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+      summary: Request quotation update
+      tags:
+      - quotation
+  /quotation/{name}/updates:
+    get:
+      description: Returns all quotation updates for a currency pair (e.g. EUR_MXN).
+      parameters:
+      - description: Currency pair code
+        example: EUR_MXN
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationUpdatesSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+      summary: Get all quotation updates
+      tags:
+      - quotation
+  /quotation/request/{update_id}:
+    get:
+      description: Returns the current rate and update time for a quotation by update
+        request id.
+      parameters:
+      - description: Update request id
+        example: 1
+        in: path
+        name: update_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationFromUpdateIDSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+      summary: Get quotation by update id
+      tags:
+      - quotation
+swagger: "2.0"
