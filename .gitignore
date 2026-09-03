@@ -27,3 +27,9 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+/currency-exchange
+*.out
+*.prof
+cover.out
+cover.prof
