@@ -71,7 +71,7 @@ const docTemplate = `{
         },
         "/quotation/{name}": {
             "get": {
-                "description": "Returns the current rate and update time for a currency pair (e.g. EUR/MXN).",
+                "description": "Returns the current rate and update time for a currency pair (e.g. EUR_MXN).",
                 "produces": [
                     "application/json"
                 ],
@@ -82,7 +82,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "example": "EUR/MXN",
+                        "example": "EUR_MXN",
                         "description": "Currency pair code",
                         "name": "name",
                         "in": "path",
@@ -132,14 +132,6 @@ const docTemplate = `{
                 "summary": "Request quotation update",
                 "parameters": [
                     {
-                        "type": "string",
-                        "example": "EUR/MXN",
-                        "description": "Currency pair code (not used by handler)",
-                        "name": "name",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
                         "description": "Update request payload",
                         "name": "request",
                         "in": "body",
@@ -154,6 +146,54 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationUpdateSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/quotation/{name}/updates": {
+            "get": {
+                "description": "Returns all quotation updates for a currency pair (e.g. EUR_MXN).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "quotation"
+                ],
+                "summary": "Get all quotation updates",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "EUR_MXN",
+                        "description": "Currency pair code",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationUpdatesSuccess"
                         }
                     },
                     "400": {
@@ -206,6 +246,29 @@ const docTemplate = `{
                 },
                 "rate": {
                     "type": "number"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_Endcru_PlataTestAssignment_internal_models.QuotationUpdate": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "new_rate": {
+                    "type": "number"
+                },
+                "previous_rate": {
+                    "type": "number"
+                },
+                "source": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -269,6 +332,25 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationUpdateData"
+                },
+                "error": {
+                    "type": "string",
+                    "example": ""
+                },
+                "status": {
+                    "type": "string",
+                    "example": "OK"
+                }
+            }
+        },
+        "internal_http-server_handlers_url_quotation.ResponseQuotationUpdatesSuccess": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_Endcru_PlataTestAssignment_internal_models.QuotationUpdate"
+                    }
                 },
                 "error": {
                     "type": "string",

@@ -24,10 +24,10 @@ type ResponseQuotationSuccess struct {
 // GetQuotation returns the latest quotation value by currency pair name.
 //
 // @Summary      Get latest quotation
-// @Description  Returns the current rate and update time for a currency pair (e.g. EUR/MXN).
+// @Description  Returns the current rate and update time for a currency pair (e.g. EUR_MXN).
 // @Tags         quotation
 // @Produce      json
-// @Param        name path string true "Currency pair code" example(EUR/MXN)
+// @Param        name path string true "Currency pair code" example(EUR_MXN)
 // @Success      200 {object} ResponseQuotationSuccess
 // @Failure      400 {object} response.ErrorResponse
 // @Failure      404 {object} response.ErrorResponse

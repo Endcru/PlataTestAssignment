@@ -17,8 +17,9 @@ const (
 	createQuotationUpdate = "createQuotationUpdate"
 	createQuotationRequest = "createQuotationRequest"
 	getQuotation = "getQuotation"
-	getQuotationUpdate = "getQuotationUpdate"
+	getQuotationUpdates = "getQuotationUpdates"
 	getQuotationRequest = "getQuotationRequest"
+	getQuotationRequestsUncompleted = "getQuotationRequestsUncompleted"
 	updateQuotation = "updateQuotation"
 	doneQuotationRequest = "doneQuotationRequest"
 	deleteQuotationRequest = "deleteQuotationRequest"
@@ -48,7 +49,7 @@ func AddBasePostgresStatements(storage *Storage) error {
 		createQuotation: `
 			INSERT INTO quotation (name, updated_at, rate)
 			VALUES ($1, $2, $3)
-			ON CONFLICT (name) DO UPDATE SET updated_at = $2, rate = $3
+			ON CONFLICT (name) DO NOTHING
 		`,
 		createQuotationUpdate: `
 			INSERT INTO quotation_update (name, updated_at, previous_rate, new_rate, source)
@@ -63,11 +64,14 @@ func AddBasePostgresStatements(storage *Storage) error {
 		getQuotation: `
 			SELECT name, updated_at, rate FROM quotation WHERE name = $1
 		`,
-		getQuotationUpdate: `
-			SELECT name, updated_at, previous_rate, new_rate, source FROM quotation_update WHERE name = $1
+		getQuotationUpdates: `
+			SELECT id, name, updated_at, previous_rate, new_rate, source FROM quotation_update WHERE name = $1 ORDER BY updated_at DESC
 		`,
 		getQuotationRequest: `
 			SELECT quotation_name, requested_at, COALESCE(completed_at, TIMESTAMP '0001-01-01'), done FROM quotation_request WHERE id = $1
+		`,
+		getQuotationRequestsUncompleted: `
+			SELECT id, quotation_name, requested_at, COALESCE(completed_at, TIMESTAMP '0001-01-01'), done FROM quotation_request WHERE done = FALSE
 		`,
 		updateQuotation: `
 			UPDATE quotation SET rate = $1, updated_at = $2 WHERE name = $3
@@ -98,7 +102,7 @@ func NewPostgresStorage(cfg *config.Config) (*Storage, error) {
 
 	_, err = db.Exec(`
 		DROP TABLE IF EXISTS quotation_request, quotation_update, quotation CASCADE;
-		
+
 		CREATE TABLE IF NOT EXISTS quotation (
 			name VARCHAR(7) UNIQUE NOT NULL PRIMARY KEY,
 			updated_at TIMESTAMP NOT NULL,
@@ -106,12 +110,13 @@ func NewPostgresStorage(cfg *config.Config) (*Storage, error) {
 		);
 
 		CREATE TABLE IF NOT EXISTS quotation_update (
+			id SERIAL PRIMARY KEY,
 			name VARCHAR(7) NOT NULL REFERENCES quotation (name),
 			updated_at TIMESTAMP NOT NULL,
 			previous_rate FLOAT NOT NULL,
 			new_rate FLOAT NOT NULL,
 			source VARCHAR(255) NOT NULL,
-			PRIMARY KEY (name, updated_at)
+			UNIQUE (name, updated_at)
 		);
 
 		CREATE TABLE IF NOT EXISTS quotation_request (
@@ -137,9 +142,13 @@ func (s *Storage) Close() error {
 func (s *Storage) CreateQuotation(quotation model.Quotation) error {
 	const op = "storage.CreateQuotation"
 
-	_, err := s.statements[createQuotation].Exec(quotation.Name, quotation.UpdatedAt, quotation.Rate)
+	res, err := s.statements[createQuotation].Exec(quotation.Name, quotation.UpdatedAt, quotation.Rate)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
+	}
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return storage.ErrQuotationAlreadyExists
 	}
 	return nil
 }
@@ -179,13 +188,22 @@ func (s *Storage) GetQuotation(name string) (quotation model.Quotation, err erro
 	return quotation, nil
 }
 
-func (s *Storage) GetQuotationUpdate( name string) (quotationUpdates []model.QuotationUpdate, err error) {
-	const op = "storage.GetQuotationUpdate"
+func (s *Storage) GetQuotationUpdates(name string) (quotationUpdates []model.QuotationUpdate, err error) {
+	const op = "storage.GetQuotationUpdates"
 
-	row := s.statements[getQuotationUpdate].QueryRow(name)
-	err = row.Scan(&quotationUpdates)
+	rows, err := s.statements[getQuotationUpdates].Query(name)
 	if err != nil {
-		return []model.QuotationUpdate{}, fmt.Errorf("%s: %w", op, err)
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var u model.QuotationUpdate
+		err = rows.Scan(&u.ID, &u.Name, &u.UpdatedAt, &u.PreviousRate, &u.NewRate, &u.Source)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		quotationUpdates = append(quotationUpdates, u)
 	}
 	return quotationUpdates, nil
 }
@@ -203,6 +221,25 @@ func (s *Storage) GetQuotationRequest(id int) (quotationRequest model.QuotationR
 		return model.QuotationRequest{}, fmt.Errorf("%s: %w", op, err)
 	}
 	return quotationRequest, nil
+}
+
+func (s *Storage) GetQuotationRequestsUncompleted() (quotationRequests []model.QuotationRequest, err error) {
+	const op = "storage.GetQuotationRequestsUncompleted"
+
+	rows, err := s.statements[getQuotationRequestsUncompleted].Query()
+	if err != nil {
+		return []model.QuotationRequest{}, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var quotationRequest model.QuotationRequest
+		err = rows.Scan(&quotationRequest.ID, &quotationRequest.Name, &quotationRequest.RequestedAt, &quotationRequest.CompletedAt, &quotationRequest.Done)
+		if err != nil {
+			return []model.QuotationRequest{}, fmt.Errorf("%s: %w", op, err)
+		}
+		quotationRequests = append(quotationRequests, quotationRequest)
+	}
+	return quotationRequests, nil
 }
 
 func (s *Storage) UpdateQuotation(quotation model.Quotation) error {

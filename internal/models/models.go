@@ -9,7 +9,7 @@ type Quotation struct {
 }
 
 type QuotationRequest struct {
-	id int `json:"id"`
+	ID int `json:"id"`
 	Name string `json:"name"`
 	RequestedAt time.Time `json:"requested_at"`
 	CompletedAt time.Time `json:"completed_at"`
@@ -17,7 +17,7 @@ type QuotationRequest struct {
 }
 
 type QuotationUpdate struct {
-	id int `json:"id"`
+	ID int `json:"id"`
 	Name string `json:"name"`
 	UpdatedAt time.Time `json:"updated_at"`
 	PreviousRate float64 `json:"previous_rate"`

@@ -20,6 +20,7 @@ import (
 	"github.com/Endcru/PlataTestAssignment/internal/http-server/middleware/logger"
 	quotationService "github.com/Endcru/PlataTestAssignment/internal/service/quotation"
 	quotationAPIService "github.com/Endcru/PlataTestAssignment/internal/service/quotationAPI"
+	quotationUpdateSheduler "github.com/Endcru/PlataTestAssignment/internal/sheduler/quotationUpdateSheduler"
 	quotation "github.com/Endcru/PlataTestAssignment/internal/http-server/handlers/url/quotation"
 )
 
@@ -66,7 +67,7 @@ func main() {
 	quotationAPIService := quotationAPIService.NewQuotationAPIService("currencybeacon", apiKey, log)
 	quotationService := quotationService.NewQuotationService(storage, log, quotationAPIService)
 
-	err = quotationService.CreateStartQuotations(10)
+	err = quotationService.CreateStartQuotations()
 	if err != nil {
 		log.Error("Failed to create start quotations", "error", err)
 		os.Exit(1)
@@ -91,6 +92,7 @@ func main() {
 		r.Get("/{name}", quotation.GetQuotation(log, quotationService))
 		r.Post("/{name}/update", quotation.QuotationUpdate(log, quotationService))
 		r.Get("/request/{update_id}", quotation.GetQuotationFromRequestUpdateID(log, quotationService))
+		r.Get("/{name}/updates", quotation.GetQuotationUpdates(log, quotationService))
 	})
 
 	log.Info("Server starting server")
@@ -114,6 +116,10 @@ func main() {
 	}()
 
 	log.Info("Server started")
+
+	quotationUpdateSheduler := quotationUpdateSheduler.NewQuotationUpdateSheduler(quotationService, log)
+	quotationUpdateSheduler.Start()
+	defer quotationUpdateSheduler.Stop()
 
 	<-done
 	log.Info("Server stopped")

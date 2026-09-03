@@ -22,6 +22,21 @@ definitions:
       updated_at:
         type: string
     type: object
+  github_com_Endcru_PlataTestAssignment_internal_models.QuotationUpdate:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      new_rate:
+        type: number
+      previous_rate:
+        type: number
+      source:
+        type: string
+      updated_at:
+        type: string
+    type: object
   internal_http-server_handlers_url_quotation.RequestQuotationUpdate:
     properties:
       quotation_name:
@@ -68,6 +83,19 @@ definitions:
         example: OK
         type: string
     type: object
+  internal_http-server_handlers_url_quotation.ResponseQuotationUpdatesSuccess:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_models.QuotationUpdate'
+        type: array
+      error:
+        example: ""
+        type: string
+      status:
+        example: OK
+        type: string
+    type: object
 host: localhost:8090
 info:
   contact: {}
@@ -78,10 +106,10 @@ paths:
   /quotation/{name}:
     get:
       description: Returns the current rate and update time for a currency pair (e.g.
-        EUR/MXN).
+        EUR_MXN).
       parameters:
       - description: Currency pair code
-        example: EUR/MXN
+        example: EUR_MXN
         in: path
         name: name
         required: true
@@ -116,12 +144,6 @@ paths:
         pair is taken from the JSON body (`quotation_name`); the `{name}` path segment
         is not used.
       parameters:
-      - description: Currency pair code (not used by handler)
-        example: EUR/MXN
-        in: path
-        name: name
-        required: true
-        type: string
       - description: Update request payload
         in: body
         name: request
@@ -148,6 +170,38 @@ paths:
           schema:
             $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
       summary: Request quotation update
+      tags:
+      - quotation
+  /quotation/{name}/updates:
+    get:
+      description: Returns all quotation updates for a currency pair (e.g. EUR_MXN).
+      parameters:
+      - description: Currency pair code
+        example: EUR_MXN
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_http-server_handlers_url_quotation.ResponseQuotationUpdatesSuccess'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/github_com_Endcru_PlataTestAssignment_internal_lib_api_response.ErrorResponse'
+      summary: Get all quotation updates
       tags:
       - quotation
   /quotation/request/{update_id}:
