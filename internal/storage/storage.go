@@ -3,5 +3,7 @@ package storage
 import "errors"
 
 var (
-	ErrNotFound = errors.New("not found")
+	ErrQuotationNotFound = errors.New("quotation not found")
+	ErrQuotationRequestNotFound = errors.New("quotation request not found")
+	ErrQuotationRequestNotDone = errors.New("quotation request not done")
 )
