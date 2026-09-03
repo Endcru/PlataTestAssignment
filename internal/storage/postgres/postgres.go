@@ -19,6 +19,7 @@ const (
 	getQuotation = "getQuotation"
 	getQuotationUpdates = "getQuotationUpdates"
 	getQuotationRequest = "getQuotationRequest"
+	getQuotationRequestUncompletedByName = "getQuotationRequestUncompletedByName"
 	getQuotationRequestsUncompleted = "getQuotationRequestsUncompleted"
 	updateQuotation = "updateQuotation"
 	doneQuotationRequest = "doneQuotationRequest"
@@ -70,6 +71,9 @@ func AddBasePostgresStatements(storage *Storage) error {
 		getQuotationRequest: `
 			SELECT quotation_name, requested_at, COALESCE(completed_at, TIMESTAMP '0001-01-01'), done FROM quotation_request WHERE id = $1
 		`,
+		getQuotationRequestUncompletedByName: `
+			SELECT id FROM quotation_request WHERE quotation_name = $1 AND done = FALSE
+		`,
 		getQuotationRequestsUncompleted: `
 			SELECT id, quotation_name, requested_at, COALESCE(completed_at, TIMESTAMP '0001-01-01'), done FROM quotation_request WHERE done = FALSE
 		`,
@@ -101,8 +105,6 @@ func NewPostgresStorage(cfg *config.Config) (*Storage, error) {
 	}
 
 	_, err = db.Exec(`
-		DROP TABLE IF EXISTS quotation_request, quotation_update, quotation CASCADE;
-
 		CREATE TABLE IF NOT EXISTS quotation (
 			name VARCHAR(7) UNIQUE NOT NULL PRIMARY KEY,
 			updated_at TIMESTAMP NOT NULL,
@@ -221,6 +223,21 @@ func (s *Storage) GetQuotationRequest(id int) (quotationRequest model.QuotationR
 		return model.QuotationRequest{}, fmt.Errorf("%s: %w", op, err)
 	}
 	return quotationRequest, nil
+}
+
+func (s *Storage) GetQuotationRequestUncompletedByName(name string) (int, error) {
+	const op = "storage.GetQuotationRequestUncompletedByName"
+
+	row := s.statements[getQuotationRequestUncompletedByName].QueryRow(name)
+	var id int
+	err := row.Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, storage.ErrQuotationRequestAlreadyExists
+		}
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	return id, nil
 }
 
 func (s *Storage) GetQuotationRequestsUncompleted() (quotationRequests []model.QuotationRequest, err error) {

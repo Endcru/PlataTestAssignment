@@ -7,4 +7,5 @@ var (
 	ErrQuotationAlreadyExists = errors.New("quotation already exists")
 	ErrQuotationRequestNotFound = errors.New("quotation request not found")
 	ErrQuotationRequestNotDone = errors.New("quotation request not done")
+	ErrQuotationRequestAlreadyExists = errors.New("quotation request already exists")
 )

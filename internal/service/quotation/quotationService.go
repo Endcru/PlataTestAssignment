@@ -184,7 +184,14 @@ func (s *QuotationServiceImpl) UpdateQuotation(name string, newCurrencyRate floa
 
 func (s *QuotationServiceImpl) CreateQuotationRequest(name string, requestedAt time.Time) (int, error) {
 	const op = "quotationService.CreateQuotationRequest"
-	id, err := s.storage.CreateQuotationRequest(model.QuotationRequest{Name: name, RequestedAt: requestedAt})
+	id, err := s.storage.GetQuotationRequestUncompletedByName(name)
+	if errors.Is(err, storageBase.ErrQuotationRequestAlreadyExists) {
+		id, err = s.storage.CreateQuotationRequest(model.QuotationRequest{Name: name, RequestedAt: requestedAt})
+		if err != nil {
+			return 0, fmt.Errorf("%s: %w", op, err)
+		}
+		return id, nil
+	}
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
